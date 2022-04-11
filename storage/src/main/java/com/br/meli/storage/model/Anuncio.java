@@ -29,5 +29,4 @@ public class Anuncio {
     private Vendedor vendedor;
 
 
-
 }

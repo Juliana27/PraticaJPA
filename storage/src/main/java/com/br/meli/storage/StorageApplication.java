@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @SpringBootApplication
@@ -36,7 +37,19 @@ public class StorageApplication implements CommandLineRunner {
         criaAnuncio();
 //        adicionaAnuncioAUmVendedorExistente();
 //        alteraVendedorDoAnuncio();
+//        salvandoCarrinho();
+//        buscaAnuncioPorVendedor();
 
+        anuncioRepository.retrieveBySellerUF(UF.GO).forEach(a -> System.out.println(a.getTitulo()));
+
+    }
+
+    private void buscaAnuncioPorVendedor() {
+        List<Anuncio> anuncios = anuncioRepository.findByVendedor(Vendedor.builder().id(1).build());
+        anuncios.forEach(a -> System.out.println(a.getTitulo()));
+    }
+
+    private void salvandoCarrinho() {
         Optional<Anuncio> opSandalia = anuncioRepository.findById(1);
         Optional<Anuncio> opBiquini = anuncioRepository.findById(5);
 
@@ -50,7 +63,6 @@ public class StorageApplication implements CommandLineRunner {
         //ItemCarrinho.builder().preco(BigDecimal.valueOf(200)).quantidade(1).build()));
 
         carrinhoRepository.save(carrinho);
-
     }
 
     private void alteraVendedorDoAnuncio() {
@@ -102,7 +114,7 @@ public class StorageApplication implements CommandLineRunner {
     }
 
     private Vendedor criaVendedor() {
-        Vendedor vendedor = Vendedor.builder()
+        Vendedor juliana = Vendedor.builder()
                 .nome("Juliana")
                 .cpf("xxx")
                 .dataNascimento(LocalDate.parse("1992-12-27"))
@@ -116,7 +128,23 @@ public class StorageApplication implements CommandLineRunner {
                         .num(123)
                         .logradouro("rua x").build())
                 .build();
-        vendedorRepository.save(vendedor); //levando a instancia do estado transient para o estado managed
-        return vendedor;
+
+        Vendedor vitor = Vendedor.builder()
+                .nome("Vitor")
+                .cpf("xxx")
+                .dataNascimento(LocalDate.parse("1992-08-09"))
+                .sexo('f')
+                .endereco(Endereco.builder()
+                        .uf(UF.RJ)
+                        .municipio("Osasco")
+                        .cep("06660-040")
+                        .bairro("Conceição")
+                        .complemento("casa")
+                        .num(123)
+                        .logradouro("rua x").build())
+                .build();
+        vendedorRepository.save(vitor);
+        vendedorRepository.save(juliana); //levando a instancia do estado transient para o estado managed
+        return juliana;
     }
 }

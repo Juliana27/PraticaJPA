@@ -45,7 +45,7 @@ public class JoiaController {
 
     @PutMapping("/joias/atualizar/{id}")
     public ResponseEntity<Joia> update(@PathVariable Integer id,
-                       @RequestBody Joia joia) {
+                                       @RequestBody Joia joia) {
         return ResponseEntity.ok(joiaService.update(id, joia));
     }
 
