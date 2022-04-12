@@ -1,13 +1,23 @@
 package com.br.meli.storage;
 
+import com.br.meli.storage.es.model.Ad;
+import com.br.meli.storage.es.repository.AdRepository;
 import com.br.meli.storage.model.*;
 import com.br.meli.storage.ropository.AnuncioRepository;
 import com.br.meli.storage.ropository.CarrinhoRepository;
 import com.br.meli.storage.ropository.VendedorRepository;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +37,13 @@ public class StorageApplication implements CommandLineRunner {
     @Autowired
     private CarrinhoRepository carrinhoRepository;
 
+    @Autowired
+    private AdRepository adRepository;
+
+    @Autowired
+    private ElasticsearchRestTemplate elasticsearchTemplate;
+
+
     public static void main(String[] args) {
         SpringApplication.run(StorageApplication.class, args);
     }
@@ -34,14 +51,70 @@ public class StorageApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        criaAnuncio();
+//        criaAnuncio();
 //        adicionaAnuncioAUmVendedorExistente();
 //        alteraVendedorDoAnuncio();
 //        salvandoCarrinho();
 //        buscaAnuncioPorVendedor();
+//        anuncioRepository.retrieveBySellerUF(UF.GO).forEach(a -> System.out.println(a.getTitulo()));
 
-        anuncioRepository.retrieveBySellerUF(UF.GO).forEach(a -> System.out.println(a.getTitulo()));
+        List<String> tagsFerramentas = Arrays.asList("ferramenta", "construcao");
+        List<String> tagsConstrucao = Arrays.asList("construcao");
 
+        Ad chaveFenda = adRepository.save(Ad.builder().code("3540").title("chave de fenda").price(BigDecimal.valueOf(20)).stock(200)
+                .tag(tagsFerramentas).build());
+        System.out.println("generated id: " + chaveFenda.getId());
+
+        Ad chaveInglesa = adRepository.save(Ad.builder().title("chave inglesa 3540").price(BigDecimal.valueOf(70)).stock(200)
+                .tag(tagsFerramentas).build());
+        System.out.println("generated id: " + chaveInglesa.getId());
+
+        Ad alicate = adRepository.save(
+                Ad.builder().title("alicate").price(BigDecimal.valueOf(90)).stock(200).tag(tagsFerramentas).build());
+        System.out.println("generated id: " + alicate.getId());
+
+        Ad parafuso = adRepository.save(Ad.builder().title("parafuso m8x25").price(BigDecimal.valueOf(90)).stock(200)
+                .tag(tagsFerramentas).build());
+        System.out.println("generated id: " + parafuso.getId());
+
+        Ad cimento = adRepository.save(Ad.builder().title("cimento tocantins").price(BigDecimal.valueOf(40)).stock(20)
+                .tag(tagsConstrucao).build());
+        System.out.println("generated id: " + parafuso.getId());
+
+        adRepository.findByCodeOrTitle("3540","3540").forEach(a->System.out.println(a.getTitle()));
+
+        //adRepository.findByTitleOrTag("construcao");//.forEach(c->System.out.println(c.getTitle()));
+
+        //busca1("construcao");
+
+        //busca2();
+
+        // adRepository.findByTitle("chave").forEach(ad ->
+        // System.out.println(ad.getTitle()));
+
+    }
+
+    private void busca2(String termo) {
+        NativeSearchQuery s = new NativeSearchQueryBuilder()
+                .withQuery(multiMatchQuery(termo)
+                        .field("title")
+                        .field("tag")
+                        .type(MultiMatchQueryBuilder.Type.PHRASE))
+                .build();
+
+        SearchHits<Ad> search = elasticsearchTemplate.search(s, Ad.class, IndexCoordinates.of("ad"));
+        search.forEach(a->System.out.println(a.getContent().getTitle()));
+    }
+
+    private void busca1(String termo) {
+        MultiMatchQueryBuilder query = new MultiMatchQueryBuilder(termo, "title", "tag")
+                .operator(Operator.OR)
+                .type(MultiMatchQueryBuilder.Type.PHRASE);
+
+        NativeSearchQuery result = new NativeSearchQueryBuilder().withQuery(query).build();
+
+        SearchHits<Ad> search = elasticsearchTemplate.search(result, Ad.class, IndexCoordinates.of("ad"));
+        search.forEach(a -> System.out.println(a.getContent().getTitle()));
     }
 
     private void buscaAnuncioPorVendedor() {
